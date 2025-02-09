@@ -1,8 +1,8 @@
 # controlplane
-// TODO(user): Add simple overview of use/purpose
+Introduces a TerraformRequest CustomResource definition for runnning terraform plans and applys
 
 ## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+Apply terraform using kubernetes native object. This is useful for creating things like IRSA where a piece of infrastructure is needed to deploy something in kubernetes.
 
 ## Getting Started
 
