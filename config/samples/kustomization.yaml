@@ -1,0 +1,4 @@
+## Append samples of your project ##
+resources:
+- controlplane.io_v1_terraformrequest.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples
