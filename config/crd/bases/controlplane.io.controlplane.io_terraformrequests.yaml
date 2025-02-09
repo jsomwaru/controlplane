@@ -40,10 +40,10 @@ spec:
             description: TerraformRequestSpec defines the desired state of TerraformRequest.
             properties:
               credentialSecretName:
+                description: credentials for cloud provider
                 type: string
               inline:
-                description: Foo is an example field of TerraformRequest. Edit terraformrequest_types.go
-                  to remove/update
+                description: Inline terraform
                 type: string
             type: object
           status:

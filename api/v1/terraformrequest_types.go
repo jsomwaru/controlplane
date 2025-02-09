@@ -28,8 +28,9 @@ type TerraformRequestSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of TerraformRequest. Edit terraformrequest_types.go to remove/update
-	Inline                string `json:"inline,omitempty"`
+	// Inline terraform
+	Inline string `json:"inline,omitempty"`
+	// credentials for cloud provider
 	CredentialsSecretName string `json:"credentialSecretName,omitempty"`
 }
 
