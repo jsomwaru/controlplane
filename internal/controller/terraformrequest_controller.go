@@ -27,10 +27,13 @@ import (
 
 	controlplaneiov1 "controlplane.io/terraformrequest/api/v1"
 	tfexec "controlplane.io/terraformrequest/pkg/tfexec"
+	kbatch "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
-	waitTime int = 5
+	waitTime    int = 5
+	jobOwnerKey     = ".metadata.controller"
 )
 
 // TerraformRequestReconciler reconciles a TerraformRequest object
@@ -62,6 +65,8 @@ func (r *TerraformRequestReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{Requeue: true, RequeueAfter: time.Second * time.Duration(waitTime)}, nil
 	}
 
+	log.Info("tfreq status", "status", tfreq.Status.Applied)
+
 	if tfreq.Status.Applied == "" {
 		job, cm := tfexec.CreateTerraformApplyJob(tfreq)
 		if err := ctrl.SetControllerReference(tfreq, cm, r.Scheme); err != nil {
@@ -81,6 +86,33 @@ func (r *TerraformRequestReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			return ctrl.Result{}, nil
 		}
 		tfreq.Status.Applied = "Running"
+
+	}
+	// Check if job is still running
+	var childJobs kbatch.JobList
+	if err := r.List(ctx, &childJobs, client.InNamespace(req.Namespace), client.MatchingFields{jobOwnerKey: req.Name}); err != nil {
+		log.Error(err, "Not able to find jobs")
+	}
+
+	for _, job := range childJobs.Items {
+		if job.Status.Failed >= 1 {
+			tfreq.Status.Applied = "Failed"
+		}
+		if job.Status.Active >= 1 {
+			continue
+		}
+		if job.Status.Succeeded >= 1 {
+			tfreq.Status.Applied = "Applied"
+		}
+	}
+
+	if err := r.Status().Update(ctx, tfreq); err != nil {
+		log.Error(err, "Unable to update TerraformRequest Status")
+		return ctrl.Result{}, err
+	}
+
+	if tfreq.Status.Applied == "Running" {
+		return ctrl.Result{Requeue: true}, nil
 	}
 
 	return ctrl.Result{}, nil
@@ -88,6 +120,19 @@ func (r *TerraformRequestReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *TerraformRequestReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kbatch.Job{}, jobOwnerKey, func(rawObj client.Object) []string {
+		job := rawObj.(*kbatch.Job)
+		owner := metav1.GetControllerOf(job)
+		if owner == nil {
+			return nil
+		}
+		if owner.APIVersion != controlplaneiov1.GroupVersion.String() || owner.Kind != "TerraformRequest" {
+			return nil
+		}
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&controlplaneiov1.TerraformRequest{}).
 		Named("terraformrequest").
