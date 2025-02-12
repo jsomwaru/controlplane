@@ -32,6 +32,8 @@ type TerraformRequestSpec struct {
 	Inline string `json:"inline,omitempty"`
 	// credentials for cloud provider
 	CredentialsSecretName string `json:"credentialSecretName,omitempty"`
+	// Terraform apply or plab
+	Operation string `json:"operation,omitempty"`
 }
 
 // TerraformRequestStatus defines the observed state of TerraformRequest.

@@ -35,6 +35,7 @@ func CreateTerraformApplyJob(tfreq *controlplaneiov1.TerraformRequest) (*kbatch.
 			"code": code,
 		},
 	}
+	command := fmt.Sprintf("cp /terraform/* /opt/work && cd /opt/work && terraform init && terraform %s", tfreq.Spec.Operation)
 	job := kbatch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
@@ -48,7 +49,7 @@ func CreateTerraformApplyJob(tfreq *controlplaneiov1.TerraformRequest) (*kbatch.
 							Name:    jobName,
 							Image:   fmt.Sprintf("%s:%s", defaultTerraformImageRepo, defaultImageTag),
 							Command: []string{"/bin/sh"},
-							Args:    []string{"-c", "cp /terraform/* /opt/work && cd /opt/work && terraform init && terraform plan"},
+							Args:    []string{"-c", command},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "code",

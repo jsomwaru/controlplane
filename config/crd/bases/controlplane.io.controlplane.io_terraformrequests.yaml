@@ -45,6 +45,9 @@ spec:
               inline:
                 description: Inline terraform
                 type: string
+              operation:
+                description: Terraform apply or plab
+                type: string
             type: object
           status:
             description: TerraformRequestStatus defines the observed state of TerraformRequest.
