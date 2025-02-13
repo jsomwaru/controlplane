@@ -20,6 +20,10 @@ func CreateTerraformApplyJob(tfreq *controlplaneiov1.TerraformRequest) (*kbatch.
 	jobName := fmt.Sprintf("tfapply-%s", tfreq.ObjectMeta.Name)
 	annotations := make(map[string]string)
 	annotations["controlplane.io/owner"] = tfreq.ObjectMeta.Name
+	operation := tfreq.Spec.Operation
+	if operation == "apply" {
+		operation = fmt.Sprintf("%s ", "-auto-approve")
+	}
 	var backOffLimit int32 = 0
 	cm := corev1.ConfigMap{
 		TypeMeta: metav1.TypeMeta{
@@ -35,7 +39,7 @@ func CreateTerraformApplyJob(tfreq *controlplaneiov1.TerraformRequest) (*kbatch.
 			"code": code,
 		},
 	}
-	command := fmt.Sprintf("cp /terraform/* /opt/work && cd /opt/work && terraform init && terraform %s", tfreq.Spec.Operation)
+	command := fmt.Sprintf("cp /terraform/* /opt/work && cd /opt/work && terraform init && terraform %s", operation)
 	job := kbatch.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName,
